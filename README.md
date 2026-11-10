@@ -1,36 +1,52 @@
-CITC-1301: Introduction to Programming & Logic
-Supplementary Module: Direct (Random) Access File Processing
-Textbook Context: Extension to Tony Gaddis, Starting Out with Python (Chapter 6, Slide 7)  
-Duration: 50–75 Minutes (1 Class Session or Lab Lab/Lecture Split)  
-Prerequisites: Chapter 6 core concepts (file modes `'r'`, `'w'`, sequential `readline()`, and context managers).
+# CITC-1301: Introduction to Programming & Logic
+## Supplementary Module: Direct (Random) Access File Processing
+**Textbook Context:** Extension to Tony Gaddis, *Starting Out with Python* (Chapter 6, Slide 7)  
+**Duration:** 50–75 Minutes (1 Class Session or Lab Lab/Lecture Split)  
+**Prerequisites:** Chapter 6 core concepts (file modes `'r'`, `'w'`, sequential `readline()`, and context managers).
+
 ---
-1. Lesson Objectives & Pedagogical Overview
+
+## 1. Lesson Objectives & Pedagogical Overview
+
 By the end of this module, students will be able to:
-Differentiate between sequential access and direct (random) access at the storage layer.
-Explain how the OS file pointer behaves and inspect its position using `file.tell()`.
-Reposition the file pointer instantaneously using `file.seek(offset, whence)`.
-Calculate byte offsets for fixed-width records using basic algebraic formulas:
-$$\text{Offset} = (\text{Record Index} - 1) \times \text{Fixed Record Size}$$
-Update and read records in place without rewriting or copying the entire file.
+1. **Differentiate** between sequential access and direct (random) access at the storage layer.
+2. **Explain** how the OS file pointer behaves and inspect its position using `file.tell()`.
+3. **Reposition** the file pointer instantaneously using `file.seek(offset, whence)`.
+4. **Calculate** byte offsets for fixed-width records using basic algebraic formulas:
+   $$\text{Offset} = (\text{Record Index} - 1) \times \text{Fixed Record Size}$$
+5. **Update and read** records in place without rewriting or copying the entire file.
+
 ---
-2. Conceptual Background & Teaching Narrative
-The Problem with Sequential Access
-"In Chapter 6, we processed files sequentially: to find the 500th employee in a file of 1,000 records, our program had to read lines 1 through 499 first. Modifying employee #500 required copying the entire file into a temporary file, writing the modified line, and renaming it.
+
+## 2. Conceptual Background & Teaching Narrative
+
+### The Problem with Sequential Access
+"In Chapter 6, we processed files sequentially: to find the 500th employee in a file of 1,000 records, our program had to read lines 1 through 499 first. Modifying employee #500 required copying the entire file into a temporary file, writing the modified line, and renaming it. 
+
 Imagine an ATM system or an inventory lookup doing that with 10 million bank accounts. It would be intolerably slow and disk-intensive.
-The Direct Access Solution
-Direct access treats a file like an array or an indexed street address. By enforcing a fixed record size, we know the exact byte position where any record begins and ends. We jump directly there in $\mathcal{O}(1)$ constant time."
+
+### The Direct Access Solution
+Direct access treats a file like an array or an indexed street address. By enforcing a **fixed record size**, we know the exact byte position where any record begins and ends. We jump directly there in $\mathcal{O}(1)$ constant time."
+
 ---
-3. Core Mechanics & API
-Method / Mode	Purpose & Behavior
-`file.tell()`	Returns an integer indicating the current byte position of the file pointer.
-`file.seek(offset, whence)`	Repositions the file pointer to `offset` bytes relative to `whence`.
-`whence = 0` (`os.SEEK_SET`)	Default. Relative to the beginning of the file (`offset >= 0`).
-`whence = 1` (`os.SEEK_CUR`)	Relative to the current pointer position.
-`whence = 2` (`os.SEEK_END`)	Relative to the end of the file (used with binary modes).
-Mode `'r+'` / `'rb+'`	Opens a file for both reading and in-place updating without truncating it.
+
+## 3. Core Mechanics & API
+
+| Method / Mode | Purpose & Behavior |
+| :--- | :--- |
+| **`file.tell()`** | Returns an integer indicating the current byte position of the file pointer. |
+| **`file.seek(offset, whence)`** | Repositions the file pointer to `offset` bytes relative to `whence`. |
+| **`whence = 0`** (`os.SEEK_SET`) | Default. Relative to the **beginning** of the file (`offset >= 0`). |
+| **`whence = 1`** (`os.SEEK_CUR`) | Relative to the **current** pointer position. |
+| **`whence = 2`** (`os.SEEK_END`) | Relative to the **end** of the file (used with binary modes). |
+| **Mode `'r+'` / `'rb+'`** | Opens a file for **both reading and in-place updating** without truncating it. |
+
 ---
-4. In-Class Live-Coding Script: `direct_access_demo.py`
+
+## 4. In-Class Live-Coding Script: `direct_access_demo.py`
+
 This standalone script demonstrates fixed-length record construction, instant jumping, in-place record modification, and error checking.
+
 ```python
 # ==============================================================================
 # Course: CITC-1301 Introduction to Programming & Logic
@@ -200,50 +216,64 @@ def main():
 if __name__ == "__main__":
     main()
 ```
+
 ---
-5. Classroom Step-by-Step Delivery Guide
-Phase 1: Motivation & Visualizing Byte Offsets (15 min)
-Whiteboard Diagram: Draw a byte tape on the board:
-```text
+
+## 5. Classroom Step-by-Step Delivery Guide
+
+### Phase 1: Motivation & Visualizing Byte Offsets (15 min)
+1. **Whiteboard Diagram:** Draw a byte tape on the board:
+   ```text
    [ Byte 0 .. 31 ] -> Record 1 (Cindy)
    [ Byte 32 .. 63] -> Record 2 (Marcus)
    [ Byte 64 .. 95] -> Record 3 (Elena)
    ```
-Derive the Formula with Students:
-Ask: "If each record is 32 bytes, where does Record 1 start?" $\rightarrow 0$.
-Ask: "Where does Record 2 start?" $\rightarrow 32$.
-Ask: "Where does Record $N$ start?" $\rightarrow (N - 1) \times 32$.
-Contrast with Variable Length: Explain why direct access fails if names are variable lengths (e.g., `'Al'` vs `'Christopher'`) unless padded.
-Phase 2: Live-Coding the Fixed-Width Setup (15 min)
-Write `create_fixed_width_file()`.
-Emphasize format specifiers: `{name:<14}` forces left alignment and pads remaining spaces up to 14 characters.
-Run the script and show `os.path.getsize(FILENAME)`. Verify that $5 \times 32 = 160$ bytes.
-Phase 3: The Magic of `seek()` and `tell()` (15 min)
-Un-comment `direct_read_record(4)`.
-Step through `f.seek(byte_offset)`. Point out to students that line 1, line 2, and line 3 were never read into RAM.
-Point out `f.tell()` in the console output to show how the pointer advances.
-Phase 4: In-Place Modification with `'r+'` (15 min)
-Remind students: in sequential files, editing record #2 requires rewriting the whole file.
-Introduce `'r+'` (Read + Write without wiping).
-Demonstrate the "Seek-Back" rule:
-Reading advances the pointer by 32 bytes.
-To overwrite that same record, you must call `f.seek(byte_offset)` again before calling `f.write()`.
+2. **Derive the Formula with Students:**
+   * Ask: *"If each record is 32 bytes, where does Record 1 start?"* $\rightarrow 0$.
+   * Ask: *"Where does Record 2 start?"* $\rightarrow 32$.
+   * Ask: *"Where does Record $N$ start?"* $\rightarrow (N - 1) \times 32$.
+3. **Contrast with Variable Length:** Explain why direct access fails if names are variable lengths (e.g., `'Al'` vs `'Christopher'`) unless padded.
+
+### Phase 2: Live-Coding the Fixed-Width Setup (15 min)
+1. Write `create_fixed_width_file()`.
+2. Emphasize format specifiers: `{name:<14}` forces left alignment and pads remaining spaces up to 14 characters.
+3. Run the script and show `os.path.getsize(FILENAME)`. Verify that $5 \times 32 = 160$ bytes.
+
+### Phase 3: The Magic of `seek()` and `tell()` (15 min)
+1. Un-comment `direct_read_record(4)`.
+2. Step through `f.seek(byte_offset)`. Point out to students that line 1, line 2, and line 3 were **never read into RAM**.
+3. Point out `f.tell()` in the console output to show how the pointer advances.
+
+### Phase 4: In-Place Modification with `'r+'` (15 min)
+1. Remind students: in sequential files, editing record #2 requires rewriting the whole file.
+2. Introduce `'r+'` (Read + Write without wiping).
+3. Demonstrate the **"Seek-Back" rule**:
+   * Reading advances the pointer by 32 bytes.
+   * To overwrite that same record, you must call `f.seek(byte_offset)` again before calling `f.write()`.
+
 ---
-6. Student In-Class Checkpoint Questions
-Question: What happens if you open a file with mode `'w'` and call `seek(0)`?  
-Answer: It does nothing helpful because mode `'w'` already erased the entire file to 0 bytes upon opening. To update existing data, use `'r+'` or `'rb+'`.
-Question: Why do we subtract 1 in `(record_num - 1) * RECORD_SIZE`?  
-Answer: Because file offsets are 0-indexed. Record 1 begins at byte 0 ($0 \times 32 = 0$).
-Question: If a text file has varying line lengths, can you still use `seek()`?  
-Answer: You can call `seek()`, but you cannot reliably predict where record $N$ starts without maintaining a separate "index table" or dictionary of byte offsets.
+
+## 6. Student In-Class Checkpoint Questions
+
+1. **Question:** *What happens if you open a file with mode `'w'` and call `seek(0)`?*  
+   **Answer:** It does nothing helpful because mode `'w'` already erased the entire file to 0 bytes upon opening. To update existing data, use `'r+'` or `'rb+'`.
+
+2. **Question:** *Why do we subtract 1 in `(record_num - 1) * RECORD_SIZE`?*  
+   **Answer:** Because file offsets are 0-indexed. Record 1 begins at byte 0 ($0 \times 32 = 0$).
+
+3. **Question:** *If a text file has varying line lengths, can you still use `seek()`?*  
+   **Answer:** You can call `seek()`, but you cannot reliably predict where record $N$ starts without maintaining a separate "index table" or dictionary of byte offsets.
+
 ---
-7. Lab Practice Assignment (Follow-Up)
-Assignment Title: Direct Access Employee Payroll Lookup
-Prompt: Write a program that manages an employee file where each record is 40 bytes:
-Employee ID (5 chars), Department (10 chars), Hourly Rate (6 chars), Name (18 chars), `\n` (1 char).
-Requirements:
-Populate the file with at least 5 employees.
-Prompt the user for an employee record number (1 through 5).
-Jump directly to that employee using `.seek()` and print their information.
-Prompt the user to enter a new hourly rate and update that employee's rate in place using mode `'r+'`.
-Include `try/except` blocks handling `ValueError` (invalid user input) and `IndexError` (out-of-range record).
+
+## 7. Lab Practice Assignment (Follow-Up)
+
+**Assignment Title:** Direct Access Employee Payroll Lookup
+* **Prompt:** Write a program that manages an employee file where each record is 40 bytes:
+  * Employee ID (5 chars), Department (10 chars), Hourly Rate (6 chars), Name (18 chars), `\n` (1 char).
+* **Requirements:**
+  1. Populate the file with at least 5 employees.
+  2. Prompt the user for an employee record number (1 through 5).
+  3. Jump directly to that employee using `.seek()` and print their information.
+  4. Prompt the user to enter a new hourly rate and update that employee's rate in place using mode `'r+'`.
+  5. Include `try/except` blocks handling `ValueError` (invalid user input) and `IndexError` (out-of-range record).
